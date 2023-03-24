@@ -1,0 +1,53 @@
+
+3种插入方法:
+db.collection.insertOne()	插入一条(version 3.2以上版本)
+db.collection.insertMany()	插入多条(version 3.2以上版本)
+db.collection.insert()	    插入一条或者多条
+
+demo:(插入一条)(一个对象表示)
+db.p.insertOne({item: "canvas",qty: 100,tags: ["cotton"],size: { h: 28, w: 35.5, uom: "cm" }})
+
+db.p.insertOne(
+	{title: 'MongoDB 教程', 
+    description: 'MongoDB 是一个 Nosql 数据库',
+    by: '菜鸟教程',
+    url: 'http://www.runoob.com',
+    tags: ['mongodb', 'database', 'NoSQL'],
+    likes: 100}
+)
+
+
+
+demo:(插入多条)(一个数组表示)
+db.p.insertMany([
+      { item: "card", qty: 15 },
+      { item: "envelope", qty: 20 },
+      { item: "stamps" , qty: 30 }
+])
+   
+db.p.insertMany([
+   { item: "journal", qty: 25, tags: ["blank", "red"], size: { h: 14, w: 21, uom: "cm" } },
+   { item: "mat", qty: 85, tags: ["gray"], size: { h: 27.9, w: 35.5, uom: "cm" } },
+   { item: "mousepad", qty: 25, tags: ["gel", "blue"], size: { h: 19, w: 22.85, uom: "cm" } }
+])
+
+
+
+demo:(插入一条或者多条)
+//插入一条
+db.p.insert( { _id: 10, item: "box", qty: 20 } )
+//插入多条
+db.p.insert(
+   [
+     { item: "pencil", qty: 50, type: "no.2" },
+     { item: "pen", qty: 20 },
+     { item: "eraser", qty: 25 }
+   ]
+)
+
+
+
+参考:
+https://docs.mongodb.com/manual/reference/method/db.collection.insert/
+https://docs.mongodb.com/manual/reference/method/db.collection.insertOne/
+https://docs.mongodb.com/manual/reference/method/db.collection.insertMany/

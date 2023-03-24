@@ -1,0 +1,312 @@
+1.lookup就是使用aggregate的$lookup属性，$lookup操作需要一个四个参数的对象，该对象的属性解释如下:
+$lookup:
+{
+    from: <collection to join>,
+    localField: <field from the input documents>,
+    foreignField: <field from the documents of the "from" collection>,
+    as: <output array field>
+}
+	 
+from：需要连接的集合
+foreignField：需要在from集合中查找的字段
+localField：在输入文档中的查找字段
+as:输出的字段名字(一个数组)
+在输出的结果中,会包含一个inventory_docs的字段,它会把order中所关联的数据在数组中展现.如果没有关联上就是一个空数组
+
+//参考:
+https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/index.html
+http://www.mongoing.com/docs/reference/operator/aggregation/lookup.html
+https://www.xttblog.com/?p=3787
+https://www.cnblogs.com/xuliuzai/p/10055535.html
+
+
+
+//demo
+//期初数据
+db.product.insert({ "_id": 1, "productname": "商品1", "price": 15 });
+db.product.insert({ "_id": 2, "productname": "商品2", "price": 36 });
+db.product.insert({ "_id": 3, "productname": "商品3", "price": 33 });
+
+db.order.insert({ "_id": 1, "pid": 1, "ordername": "订单1", "uid": 1 });
+db.order.insert({ "_id": 2, "pid": 2, "ordername": "订单2", "uid": 2 });
+db.order.insert({ "_id": 3, "pid": 2, "ordername": "订单3", "uid": 2 });
+db.order.insert({ "_id": 4, "pid": 1, "ordername": "订单4", "uid": 1 });
+db.order.insert({ "_id": 5, "pid": 1, "ordername": "订单5", "uid": 1 });
+
+db.user.insert({ "_id": 1, "username": 1 });
+db.user.insert({ "_id": 2, "username": 2 });
+
+//利用lookup关联查询
+//product关联order
+db.product.aggregate([
+    {
+      $lookup:
+        {
+          from: "order",
+          localField: "_id",
+          foreignField: "pid",
+          as: "inventory_docs"
+        }
+   }
+])
+
+返回类似这样数据:
+/* 1 */
+{
+    "_id" : 1.0,
+    "productname" : "商品1",
+    "price" : 15.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 1.0,
+            "pid" : 1.0,
+            "ordername" : "订单1",
+            "uid" : 1.0
+        }, 
+        {
+            "_id" : 4.0,
+            "pid" : 1.0,
+            "ordername" : "订单4",
+            "uid" : 1.0
+        }, 
+        {
+            "_id" : 5.0,
+            "pid" : 1.0,
+            "ordername" : "订单5",
+            "uid" : 1.0
+        }
+    ]
+}
+/* 2 */
+{
+    "_id" : 2.0,
+    "productname" : "商品2",
+    "price" : 36.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 2.0,
+            "pid" : 2.0,
+            "ordername" : "订单2",
+            "uid" : 2.0
+        }, 
+        {
+            "_id" : 3.0,
+            "pid" : 2.0,
+            "ordername" : "订单3",
+            "uid" : 2.0
+        }
+    ]
+}
+/* 3 */
+{
+    "_id" : 3.0,
+    "productname" : "商品3",
+    "price" : 33.0,
+    "inventory_docs" : []
+}
+
+
+//demo
+//order关联user
+db.order.aggregate(
+[{
+       $lookup:
+        {
+            from:"user",
+            localField: "uid",
+            foreignField: "_id",
+            as: "userlist"
+        }
+    }
+]) 
+
+
+
+2.还可以在链接中过滤数据,
+//只链接product表中_id大于等于2的
+db.product.aggregate([
+	{ $match:  {  _id :  { $gte: 2 } } },
+    {
+      $lookup:
+        {
+          from: "order",
+          localField: "_id",
+          foreignField: "pid",
+          as: "inventory_docs"
+        }
+   }
+])
+
+//链接product表中_id大于等于1的,并且order表中pid等于2的  (这样相当于2个表都写了条件)
+db.product.aggregate([
+    { $match: { _id: { $gte: 1 } } },
+    {
+        $lookup:
+            {
+                from: "order",
+                localField: "_id",
+                foreignField: "pid",
+                as: "inventory_docs"
+            }
+    },
+    { $match: { "inventory_docs.pid": 2 } }
+])
+    
+
+
+3.三个表关联查询，只需要配置两个$lookup即可.具体查询代码如下：
+//order关联product,还关联user
+db.order.aggregate([{
+    $lookup:
+        {
+            from: "product",
+            localField: "pid",
+            foreignField: "_id",
+            as: "inventory_docs"
+        }
+}, {
+    $lookup:
+        {
+            from: "user",
+            localField: "uid",
+            foreignField: "_id",
+            as: "user_docs"
+        }
+}]);
+
+//返回结果:
+/* 1 */
+{
+    "_id" : 1.0,
+    "pid" : 1.0,
+    "ordername" : "订单1",
+    "uid" : 1.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 1.0,
+            "productname" : "商品1",
+            "price" : 15.0
+        }
+    ],
+    "user_docs" : [ 
+        {
+            "_id" : 1.0,
+            "username" : 1.0
+        }
+    ]
+}
+/* 2 */
+{
+    "_id" : 2.0,
+    "pid" : 2.0,
+    "ordername" : "订单2",
+    "uid" : 2.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 2.0,
+            "productname" : "商品2",
+            "price" : 36.0
+        }
+    ],
+    "user_docs" : [ 
+        {
+            "_id" : 2.0,
+            "username" : 2.0
+        }
+    ]
+}
+/* 3 */
+{
+    "_id" : 3.0,
+    "pid" : 2.0,
+    "ordername" : "订单3",
+    "uid" : 2.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 2.0,
+            "productname" : "商品2",
+            "price" : 36.0
+        }
+    ],
+    "user_docs" : [ 
+        {
+            "_id" : 2.0,
+            "username" : 2.0
+        }
+    ]
+}
+/* 4 */
+{
+    "_id" : 4.0,
+    "pid" : 1.0,
+    "ordername" : "订单4",
+    "uid" : 1.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 1.0,
+            "productname" : "商品1",
+            "price" : 15.0
+        }
+    ],
+    "user_docs" : [ 
+        {
+            "_id" : 1.0,
+            "username" : 1.0
+        }
+    ]
+}
+/* 5 */
+{
+    "_id" : 5.0,
+    "pid" : 1.0,
+    "ordername" : "订单5",
+    "uid" : 1.0,
+    "inventory_docs" : [ 
+        {
+            "_id" : 1.0,
+            "productname" : "商品1",
+            "price" : 15.0
+        }
+    ],
+    "user_docs" : [ 
+        {
+            "_id" : 1.0,
+            "username" : 1.0
+        }
+    ]
+}
+
+
+
+4.值在数组中也可以链接
+
+//demo 先插入数据
+db.classes.insert( [
+   { _id: 1, title: "Reading is ...", enrollmentlist: [ "giraffe2", "pandabear", "artie" ], days: ["M", "W", "F"] },
+   { _id: 2, title: "But Writing ...", enrollmentlist: [ "giraffe1", "artie" ], days: ["T", "F"] }
+])
+
+db.members.insert( [
+   { _id: 1, name: "artie", joined: new Date("2016-05-01"), status: "A" },
+   { _id: 2, name: "giraffe", joined: new Date("2017-05-01"), status: "D" },
+   { _id: 3, name: "giraffe1", joined: new Date("2017-10-01"), status: "A" },
+   { _id: 4, name: "panda", joined: new Date("2018-10-11"), status: "A" },
+   { _id: 5, name: "pandabear", joined: new Date("2018-12-01"), status: "A" },
+   { _id: 6, name: "giraffe2", joined: new Date("2018-12-01"), status: "D" }
+])
+
+//classes表的enrollmentlist字段是一个数组,也可以去链接members的name
+//注意:enrollmentlist如果有重复的值,返回结果中的数组里面也不是有重复的 
+db.classes.aggregate([
+   {
+      $lookup:
+         {
+            from: "members",
+            localField: "enrollmentlist",
+            foreignField: "name",
+            as: "enrollee_info"
+        }
+   }
+])
+
+

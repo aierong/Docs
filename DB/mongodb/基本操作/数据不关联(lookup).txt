@@ -1,0 +1,137 @@
+参考:
+https://docs.mongodb.com/manual/reference/operator/aggregation/lookup/index.html
+
+{
+   $lookup:
+     {
+       from: <collection to join>,
+       let: { <var_1>: <expression>, …, <var_n>: <expression> },
+       pipeline: [ <pipeline to execute on the collection to join> ],
+       as: <output array field>
+     }
+}
+
+from:链接表名
+let:本表的某些带引用列起别名(非必填)
+pipeline:条件(数组) pipeline中只可以引用链接表中字段,如果要引用本表字段,需要在let中定义别名
+as:结果列的名称
+
+//可以很方便的做出类似sql的左链接效果 
+
+
+
+//demo
+db.orders.insert([
+  { "_id" : 1, "item" : "almonds", "price" : 12, "ordered" : 2 },
+  { "_id" : 2, "item" : "pecans", "price" : 20, "ordered" : 1 },
+  { "_id" : 3, "item" : "cookies", "price" : 10, "ordered" : 60 }
+])
+
+db.warehouses.insert([
+  { "_id" : 1, "stock_item" : "almonds", warehouse: "A", "instock" : 120 },
+  { "_id" : 2, "stock_item" : "pecans", warehouse: "A", "instock" : 80 },
+  { "_id" : 3, "stock_item" : "almonds", warehouse: "B", "instock" : 60 },
+  { "_id" : 4, "stock_item" : "cookies", warehouse: "B", "instock" : 40 },
+  { "_id" : 5, "stock_item" : "cookies", warehouse: "A", "instock" : 80 }
+])
+
+//orders表与warehouses表不一定要某个字段相等链接
+//因为pipeline中要引用本表的item和ordered，所以得在let中定义别名,在pipeline中使用是两个$$
+//本表item等于目标表的stock_item,并且目标表的instock大于等于本表的ordered
+db.orders.aggregate([
+   {
+      $lookup:
+         {
+           from: "warehouses",
+           let: { order_item: "$item", order_qty: "$ordered" },
+           pipeline: [
+              { $match:
+                 { $expr:
+                    { $and:
+                       [
+                         { $eq: [ "$stock_item",  "$$order_item" ] },
+                         { $gte: [ "$instock", "$$order_qty" ] }
+                       ]
+                    }
+                 }
+              },
+              { $project: { stock_item: 0, _id: 0 } }
+           ],
+           as: "stockdata"
+         }
+    }
+])
+
+
+
+//链接了2个表,并且排序,过滤原表
+//使用$match可以先把原表数据过滤一下,目标表的数据可以在pipeline中过滤
+//pipeline中的$match使用的是表达式($expr),所以条件只能用运算符来计算(例如:$eq)
+db.pyq.aggregate([
+    {
+        $match: {
+            name: 'kt'
+        }
+    },
+    {
+        $lookup:
+            {
+                from: "pyqpraise",
+                let: { pyq_id: "$_id" },
+                pipeline: [
+                    {
+                        $match:
+                            {
+                                $expr:
+                                    {
+                                        $and:
+                                            [
+
+                                                { $eq: ["$pyq_id", "$$pyq_id"] },
+                                                //没有取消 没有删除的
+                                                { $eq: ["$iscancel", false] },
+                                                { $eq: ["$isdelete", false] }
+                                            ]
+                                    }
+                            }
+                    }
+
+                ],
+                as: "praiselist"
+            }
+
+    },
+    {
+        $lookup:
+            {
+                from: "pyqbbs",
+                let: { pyq_id: "$_id" },
+                pipeline: [
+                    {
+                        $match:
+                            {
+                                $expr:
+                                    {
+                                        $and:
+                                            [
+
+                                                { $eq: ["$pyq_id", "$$pyq_id"] },
+                                                { $eq: ["$isdelete", false] }
+
+                                            ]
+                                    }
+                            }
+                    }
+
+                ],
+                as: "bbslist"
+            }
+    },
+    {
+        //最新排前面
+        $sort: { addunix: -1 }
+    },
+    {
+        $limit: 10
+    }
+])

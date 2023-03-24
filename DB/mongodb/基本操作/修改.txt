@@ -1,0 +1,77 @@
+
+修改方法:
+db.collection.updateOne()         修改一条记录
+db.collection.updateMany()        修改多条记录
+db.collection.replaceOne()        替换(只能替换一条)
+db.collection.update()            修改(默认情况下,db.collection.update()只更新一个文档。要更新多个文档，请使用multi选项.)  
+
+
+
+
+demo:
+//把title=Mongodb 教程 修改为MongoDb
+db.p.updateOne(
+    { "title": "Mongodb 教程" },
+    { $set: { "title": "MongoDb" } }
+)
+
+
+
+//"favorites" : { "artist" : "Picasso", "food" : "pie"    }        favorites.food就是下一级节点名称
+//更新favorites.food字段的值为"pie"并更新type字段的值为3
+db.p.updateOne(
+   { "favorites.artist": "Picasso" },
+   {
+     $set: { "favorites.food": "pie", type: 3 }
+   }
+)
+
+
+
+db.p.updateMany(
+   { "favorites.artist": "Picasso" },
+   {
+     $set: { "favorites.artist": "Pisanello", type: 3 }
+   }
+)
+
+
+//替换(把符合条件的记录替换了)
+db.p.replaceOne(
+    { "favorites.artist": "Pisanello" },
+    { name: "amy", age: 34, type: 2, status: "P", favorites: { "artist": "Dali", food: "donuts" } }
+)
+
+
+//修改(默认也是修改一条记录)
+db.p.update(
+    { "favorites.artist": "Pisanello" },
+    {
+        $set: { "favorites.food": "pizza", type: -1 }
+    }
+)
+
+//修改  multi: true 就可以修改多条
+db.p.update(
+    { "favorites.artist": "Pisanello" },
+    {
+        $set: { "favorites.food": "pizza", type: -2 }
+    },
+    { multi: true }
+)
+
+//update 也可以做整条替换
+db.p.update(
+    { "favorites.artist": "Pisanello" },
+    { name: "mee", age: 25, type: 110, status: "A", favorites: { "artist": "Matisse", food: "mango" } }
+)
+
+
+
+参考:
+https://docs.mongodb.com/manual/reference/method/db.collection.updateOne/#db.collection.updateOne
+https://docs.mongodb.com/manual/reference/method/db.collection.updateMany/#db.collection.updateMany
+https://docs.mongodb.com/manual/reference/method/db.collection.replaceOne/#db.collection.replaceOne
+https://docs.mongodb.com/manual/reference/method/db.collection.update/
+
+

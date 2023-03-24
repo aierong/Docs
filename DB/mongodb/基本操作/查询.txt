@@ -1,0 +1,106 @@
+// $lt(<) $lte(<=) $gt(>) $gte(>=)  $eq(=)
+ 
+
+
+//查询所有
+db.inventory.find( {} )              
+相当:SELECT * FROM inventory
+
+
+
+//等于
+db.inventory.find( { status: "D" } )   
+相当:SELECT * FROM inventory WHERE status = "D"
+
+db.users.find({"age" : 27}) 
+相当:select * from users where age = 27
+
+
+
+//不等于
+db.kitten.find({"name" : {"$ne" : "F"}})
+相当:select * from kitten where name != 'F'
+
+
+
+//in
+db.inventory.find( { status: { $in: [ "A", "D" ] } } )
+相当:SELECT * FROM inventory WHERE status in ("A", "D")
+
+db.users.find({"ticket_no" : {"$in" : [725, 542, 390]}}) 
+相当:select * from users where ticket_no in (725, 542, 390)
+
+
+
+//not in
+db.users.find({"ticket_no" : {"$nin" : [725, 542, 390]}}) 
+相当:select * from users where ticket_no not in (725, 542, 390)
+
+
+
+//and 多个条件
+db.inventory.find( { status: "A", qty: { $lt: 30 } } )
+相当:SELECT * FROM inventory WHERE status = "A" AND qty < 30
+
+db.users.find({"username" : "joe", "age" : 27}) 
+相当:select * from users where "username" = "joe" and age = 27
+
+db.users.find({"age" : {"$gte" : 18, "$lte" : 30}}) 
+相当:select * from users where age >=18 and age <= 30 
+
+
+
+//or 
+db.inventory.find( { $or: [ { status: "A" }, { qty: { $lt: 30 } } ] } )
+相当:SELECT * FROM inventory WHERE status = "A" OR qty < 30
+
+db.users.find({"$or" : [{"ticket_no" : 725}, {"winner" : true}]}) 
+相当:select * form users where ticket_no = 725 or winner = true
+
+
+//or 和 and 一起用
+db.inventory.find( {
+     status: "A",
+     $or: [ { qty: { $lt: 30 } }, { item: /^p/ } ]
+} )
+相当:SELECT * FROM inventory WHERE status = "A" AND ( qty < 30 OR item LIKE "p%")
+
+
+
+//2个字段比较
+db.order.find( { $expr: { $gt: [ "$_id" , "$pid"   ] } } )
+相当:SELECT * FROM order WHERE _id>pid 
+
+
+
+//字段相加再比较
+db.order.find({$expr: {$gt: [ { $add: [ "$uid", "$pid" ] }  , 3]}})
+相当:SELECT * FROM order WHERE uid+pid>3 
+
+
+
+//控制返回字段:
+db.inventory.find( { status: "A" } )
+相当:SELECT * from inventory WHERE status = "A"
+
+
+
+//会返回item,status,和id
+db.inventory.find( { status: "A" }, { item: 1, status: 1 } )
+相当:SELECT _id, item, status from inventory WHERE status = "A"
+
+db.users.find({}, {"username" : 1, "email" : 1}) 
+相当:select username, email from users
+
+
+
+//把id排除不显示
+db.inventory.find( { status: "A" }, { item: 1, status: 1, _id: 0 } )
+相当:SELECT item, status from inventory WHERE status = "A"
+
+
+
+//除了status,instock不显示,其他都显示
+db.inventory.find( { status: "A" }, { status: 0, instock: 0 } )
+
+

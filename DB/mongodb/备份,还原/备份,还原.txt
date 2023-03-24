@@ -1,0 +1,36 @@
+
+1.备份:
+mongodump -h dbhost -d dbname -o dbdirectory
+
+-h：
+MongDB所在服务器地址，例如：127.0.0.1，当然也可以指定端口号：127.0.0.1:27017
+
+-d：
+需要备份的数据库实例，例如：test
+
+-o：
+备份的数据存放位置，例如：c:\data\dump，当然该目录需要提前建立，在备份完成后，系统自动在dump目录下建立一个test目录，这个目录里面存放该数据库实例的备份数据。
+
+demo: 
+//说明:备份成功后,会在D:\TempWork\TempData目录下生成一个mytest目录,里面有2个文件(一个bson,一个json)
+mongodump -h  127.0.0.1:27017 -d mytest -o D:\TempWork\TempData
+
+
+
+2.还原:
+mongorestore -h <hostname><:port> -d dbname <path>
+
+MongoDB所在服务器地址，默认为： localhost:27017
+
+--db 
+需要恢复的数据库实例，例如：test，当然这个名称也可以和备份时候的不一样，比如test2
+
+<path>：
+mongorestore 最后的一个参数，设置备份数据所在位置，例如：c:\data\dump\test。
+
+demo:
+//说明:还原为mytest_hf数据库
+//如果恢复已经存在的数据库会报错,可以先删除再恢复
+mongorestore   -h    127.0.0.1:27017   -d   mytest_hf   D:\TempWork\TempData\mytest  
+
+

@@ -1,0 +1,42 @@
+
+$inc操作符将字段增加指定的值(负数就是减少值)
+
+//demo数据
+{
+  _id: 1,
+  sku: "abc123",
+  quantity: 10,
+  txt:"a",
+  metrics: {
+    orders: 2,
+    ratings: 3.5
+  }
+}
+
+//quantity减少2,metrics的orders增加1
+db.p.update(
+   { sku: "abc123" },
+   { $inc: { quantity: -2, "metrics.orders": 1 } }
+)
+
+//$inc配合$set一起使用
+//quantity减少2,metrics的orders增加1,txt修改为newtxt
+db.p.update(
+    { sku: "abc123" },
+    {
+        $inc: { quantity: -2, "metrics.orders": 1 },
+        $set: { "txt": "newtxt" }
+    }
+) 
+
+
+
+//$add运算符一样达到效果
+db.p.update(
+    {"url":"uu2"},
+    [
+        {"$set": { "quantity": { "$add": ["$quantity", -2]} ,       "sku":100} }
+    ]
+)
+
+

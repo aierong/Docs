@@ -1,0 +1,76 @@
+
+aggregate也可以做普通查询,用$project控制显示字段或增加替换列,用$match过滤数据
+
+
+//demo数据
+{
+  "_id" : 1,
+  title: "abc123",
+  isbn: "0001122223334",
+  author: { last: "zzz", first: "aaa" },
+  copies: 5
+}
+
+// $project控制显示哪些字段  1是显示,0是不显示
+// 显示title,author还包括_id
+db.t.aggregate([{ $project: { title: 1, author: 1 } }])
+
+// 显示title,author 不显示_id
+db.t.aggregate([{ $project: { _id: 0, title: 1, author: 1 } }])
+
+// 内联属性也支持
+db.books.aggregate( [ { $project : { "author.first" : 0, "lastModified" : 0 } } ] )
+
+
+
+//$match过滤数据
+db.t.aggregate([
+    { $match: { "author.first": "aaa" } },
+    { $project: { "title": 1, "author.first": 1 } }])
+
+//过滤数据,并且把密码字段返回空字符串	
+db.user.aggregate([
+    { $match: { username: "w" } },
+    { $project: { username: 1, pwd: "", _id: 0 } }
+])	
+
+
+
+//demo数据
+{
+  "_id" : 1,
+  title: "abc123",
+  isbn: "0001122223334",
+  author: { last: "zzz", first: "aaa" },
+  copies: 5
+}
+
+// $project还可以创建一个计算字段
+// 显示title,并且创建一个对象isbn,新字段lastName,新字段copiesSold
+db.t.aggregate(
+    [
+        {
+            $project: {
+                title: 1,
+                isbn: {
+                    prefix: { $substr: ["$isbn", 0, 3] },
+                    group: { $substr: ["$isbn", 3, 2] },
+                    publisher: { $substr: ["$isbn", 5, 4] },
+                    title: { $substr: ["$isbn", 9, 3] },
+                    checkDigit: { $substr: ["$isbn", 12, 1] }
+                },
+                lastName: "$author.last",
+                copiesSold: "$copies"
+            }
+        }
+    ]
+)
+
+
+//demo
+{ "_id" : ObjectId("55ad167f320c6be244eb3b95"), "x" : 1, "y" : 1 }
+// $project创建一个数组的计算字段
+db.collection.aggregate( [ { $project: { myArray: [ "$x", "$y" ] } } ] )
+//返回{ "_id" : ObjectId("55ad167f320c6be244eb3b95"), "myArray" : [ 1, 1 ] }
+
+

@@ -1,0 +1,10 @@
+
+1是升序，-1是降序
+
+//按age降序
+db.kitten.find({}).sort({"age":-1})
+
+//按age升序，并且name升序
+db.kitten.find({}).sort({"age":1,"name":1})
+
+

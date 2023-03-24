@@ -1,0 +1,108 @@
+
+聚合操作使用aggregate()方法
+
+$sum	对集合中所有文档的定义值进行加和操作	
+$avg	对集合中所有文档的定义值进行平均值	
+$min	计算集合中所有文档的对应值中的最小值	
+$max	计算集合中所有文档的对应值中的最大值
+
+
+1.$group分组操作符
+//按年龄age分组,统计每组有多少个
+//特别说明:_id必须要写这个,counts可以自己命名
+db.kitten.aggregate([{$group : {_id : "$age", counts : {$sum : 1}}}])
+返回结果:
+{
+    "_id" : 55,
+    "counts" : 4.0
+}
+{
+    "_id" : 40,
+    "counts" : 1.0
+}
+
+//按name分组,统计age的总数
+db.kitten.aggregate([{$group : {_id : "$name", sums : {$sum : "$age"}}}])
+//按name分组,统计age的平均值	
+db.kitten.aggregate([{$group : {_id : "$name", avgs : {$avg : "$age"}}}])
+//按name分组,统计age的最小值	
+db.kitten.aggregate([{$group : {_id : "$name", mins : {$min : "$age"}}}])
+//按name分组,统计age的最大值	
+db.kitten.aggregate([{$group : {_id : "$name", maxs : {$max : "$age"}}}])
+
+//按name分组,统计个数，汇总，最高，最低，平均
+db.kitten.aggregate([{$group:{_id:"$name","个数":{$sum:1},"汇总":{$sum:"$age"},"最高":{$max:"$age"},"最低":{$min:"$age"},"平均":{$avg:"$age"}}}])
+
+
+// 按name和age同时分组
+db.kitten.aggregate( [
+   { $group: { _id: { name: "$name", age: "$age" }, sums: { $sum: "$age" } } }    
+] )
+
+
+
+2.聚合数据筛选 ($match是对分组数据进行筛选)(可以筛选分组前或者分组后的数据)
+
+//把分组前的数据做筛选再进行分组(分组前数据进行过滤筛选)
+//db.kitten.find({ age :  { $gte: 21 } }}).aggregate()      //这样写是不行的
+//****** 注意：$match表达式要写在$group表达式前面
+//把age大于等于21的数据过滤再进行分组
+db.kitten.aggregate(
+[
+{ $match:  {  age :  { $gte: 21 } } },
+{ $group : {_id : "$name", sums : {$sum : "$age"}}}
+])
+
+//把分组后的结果做筛选(分组后的数据进行过来筛选)
+//****** 注意：$match表达式要写在$group表达式后面
+//把分组后汇总age大于等于200的
+db.kitten.aggregate(
+[
+{ $group : {_id : "$name", sums : {$sum : "$age"}}},
+{ $match:  {  sums: { $gte: 200 }  } }
+])  
+
+//分组前过滤,分组结果筛选同时使用
+//把age大于等于21的数据过滤再进行分组,把分组后汇总age大于等于200的
+db.kitten.aggregate(
+[
+{ $match: {  age :  { $gte: 21 } } },
+{ $group : {_id : "$name", sums : {$sum : "$age"}}},
+{ $match:  {  sums: { $gte: 200 }  } }
+])
+
+
+
+3.聚合后结果排序 ($sort是进行分组后数据排序)
+
+//按分组的name排序
+// db.kitten.aggregate(***).sort()        //这样写是不行的
+db.kitten.aggregate([
+{$group : {_id : "$name", sums : {$sum : "$age"}}},
+{
+    $sort: { "_id":  - 1 }
+}
+]) 
+
+//按统计的个数排序
+db.kitten.aggregate([
+{$group:{_id:"$name","个数":{$sum:1},"汇总":{$sum:"$age"},"最高":{$max:"$age"},"最低":{$min:"$age"},"平均":{$avg:"$age"}}},
+{
+    $sort: {"个数":  - 1 }
+}
+])
+
+
+4.对某一个列分组 distinct 返回一个数组
+//对age列分组
+db.kitten.distinct("age")
+结果:
+[
+    20.0,
+    21.0,
+    23.0,
+    28.0,
+    38.0
+]
+
+

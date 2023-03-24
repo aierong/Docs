@@ -1,0 +1,13 @@
+ObjectId类型数据在使用时需要:ObjectId
+
+//查询中使用
+db.kitten.find({ _id: ObjectId('5e664b35c6f74a0db8a57dbe') })
+db.kitten.find({ age: 28, driverid: ObjectId('5e664dce2b079f2a5c706b87') })
+
+//修改或者插入,删除
+db.kitten.update({ age: 28 },
+    { $set: { driverid: ObjectId('5e664b35c6f74a0db8a57dbe') } }
+
+)
+
+

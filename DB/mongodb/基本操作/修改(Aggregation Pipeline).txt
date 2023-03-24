@@ -1,0 +1,75 @@
+
+// mongodb 4.2版本才支持  Updates with Aggregation Pipeline
+// https://docs.mongodb.com/manual/tutorial/update-documents-with-aggregation-pipeline/
+// 注意： 修改表达式是写在数组中
+// 特别提示:这些用运算符的修改,可以用这种模式来进行操作
+
+
+
+//$concat是把字符串连接起来,[]中可以写多个,某个字段(字段用$)或者某个字符串都可以
+//https://docs.mongodb.com/manual/reference/operator/aggregation/concat/index.html
+//更新description字段,把字段by_user+字符_+字段url+字符_
+//更新sku=100
+db.p.update(
+    { "url": "uu" },
+    [
+        {
+            $set: {
+                "description": {
+                    $concat: ["$by_user", "_", "$url", "_"]
+                }, "sku": 100
+            }
+        }
+    ]
+)
+
+//$add是把数字相加起来,[]中可以写多个,某个字段(字段用$)或者某个数字都可以
+
+//更新quantity字段,把字段quantity加-2
+//更新sku=100
+db.p.update(
+    { "url": "uu2" },
+    [
+        {
+            $set: {
+                "quantity": {
+                    $add: ["$quantity", -2]
+                }, "sku": 100
+            }
+        }
+    ]
+)
+
+//更新quantity字段,把字段quantity加-2
+//更新metrics下的orders字段,把字段metrics.orders加200
+//更新sku=100
+db.p.update(
+    { "url": "uu2" },
+    [
+        {
+            $set: {
+                "quantity": { $add: ["$quantity", -2] },
+                "metrics.orders": { $add: ["$metrics.orders", 200] },
+                "sku": 100
+            }
+        }
+    ]
+)
+
+
+//更新quantity字段,把字段quantity加-2(如果quantity是空就默认0)
+//更新sku=100
+db.p.update(
+    { "url": "uu3" },
+    [
+        {
+            $set: {
+                "quantity": {
+                    $add: [{ $ifNull: ["$quantity", 0] }, -2]
+                }, "sku": 100
+            }
+        }
+    ]
+)
+
+
