@@ -1,0 +1,7 @@
+unplugin-icons                               
+这个除了可以加载iconify的图标,还可以加载我们自己svg文件成图标
+
+
+demo可以参考"矢量图标库"文件夹
+
+
